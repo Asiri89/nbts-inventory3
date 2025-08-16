@@ -562,3 +562,57 @@
                 <!-- Full width for login page -->
                 <main class="col-12">
             <?php endif; ?>
+<?php
+// ... existing header start
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../config/database.php';
+
+// fetch unread notifications (limit 10)
+$unread = [];
+$unread_count = 0;
+if (isLoggedIn()) {
+    $stmt = $mysqli->prepare("
+        SELECT id, title, message, created_at 
+        FROM notifications 
+        WHERE (user_id = ? OR user_id IS NULL) AND is_read = 0 
+        ORDER BY created_at DESC LIMIT 10
+    ");
+    $uid = $_SESSION['user']['id'];
+    $stmt->bind_param('i', $uid);
+    $stmt->execute();
+    $unread = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $unread_count = count($unread);
+}
+?>
+<!-- in your top navbar area -->
+<li class="nav-item dropdown">
+  <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+    <i class="bi bi-bell"></i>
+    <?php if ($unread_count > 0): ?>
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        <?= $unread_count ?>
+      </span>
+    <?php endif; ?>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end p-0" style="min-width:320px">
+    <li class="p-2 border-bottom">
+      <strong>Notifications</strong>
+      <?php if ($unread_count > 0): ?>
+        <a class="float-end small" href="<?= url('api/notifications.php', ['action'=>'mark_all_read']) ?>">Mark all read</a>
+      <?php endif; ?>
+    </li>
+    <?php if ($unread_count === 0): ?>
+      <li class="p-3 text-muted small">No new notifications</li>
+    <?php else: foreach ($unread as $n): ?>
+      <li>
+        <a class="dropdown-item small" href="<?= url('api/notifications.php', ['action'=>'open','id'=>$n['id']]) ?>">
+          <div class="fw-semibold"><?= htmlspecialchars($n['title']) ?></div>
+          <div class="text-muted text-truncate"><?= htmlspecialchars($n['message']) ?></div>
+          <div class="text-muted" style="font-size:11px;"><?= htmlspecialchars($n['created_at']) ?></div>
+        </a>
+      </li>
+    <?php endforeach; endif; ?>
+  </ul>
+</li>
