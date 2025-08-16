@@ -532,4 +532,14 @@ class DashboardStats {
         return fetchAll($query, $params, $types);
     }
 }
+// --- add near other helpers ---
+function url($path, $params = []) {
+    $base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+    $href = $base . '/' . ltrim($path, '/');
+    if (!empty($params)) {
+        $href .= (strpos($href, '?') === false ? '?' : '&') . http_build_query($params);
+    }
+    return htmlspecialchars($href, ENT_QUOTES, 'UTF-8');
+}
+
 ?>
